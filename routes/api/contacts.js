@@ -5,6 +5,8 @@ const {
   addContact,
   removeContact,
   updateContact,
+  updateStatusContact,
+
 } = require("../../models/contacts");
 const router = express.Router();
 
@@ -56,9 +58,9 @@ router.get("/:contactId", async (req, res, next) => {
 });
 
 router.post("/", async (req, res, next) => {
-  const { name, email, phone } = req.body;
+  const { name, email, phone,favorite } = req.body;
   try {
-    const newContact = await addContact({ name, email, phone });
+    const newContact = await addContact({ name, email, phone,favorite });
 
     res.status(201).json({
       status: "success",
@@ -80,6 +82,7 @@ router.delete("/:contactId", async (req, res, next) => {
     const { contactId } = req.params;
     const contacts = await listContacts();
     const updatedContacts = contacts.filter((el) => el.id !== contactId);
+    const contactToDelete = await updateContact(contactId);
 
     await removeContact(contactId);
 
@@ -87,6 +90,9 @@ router.delete("/:contactId", async (req, res, next) => {
       status: "success",
       code: 200,
       message: "Contact deleted",
+      data: {
+        deletedContact: contactToDelete,
+      },
     });
   } catch (error) {
     console.error(error);
@@ -127,5 +133,24 @@ router.put("/:contactId", async (req, res, next) => {
   }
 });
 
+router.patch("/:contactId/favorite", async (req, res, next) => {
+  try {
+    const { contactId } = req.params;
+    const { favorite } = req.body;
+    const updatedContact = await updateStatusContact(contactId, favorite);
+    res.json({
+      status: "success",
+      code: 200,
+      data: { updatedContact },
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(404).json({
+      status: "error",
+      code: 404,
+      message: "Contact not found",
+    });
+  }
+});
 
 module.exports = router;
